@@ -1,5 +1,6 @@
+=================================================================
 Go Port of [Johnny Five](https://github.com/rwaldron/johnny-five)
------------------------------------------------------------------
+=================================================================
 
 This is a straight port of the Johnny Five project to the Go
 Programming Language.
