@@ -7,7 +7,7 @@ import (
 
 type Board interface {
 	Close()
-	Led(int) Led // TODO: Replace int with an led struct
+	Led(byte) Led // TODO: Replace int with an led struct
 	Ready() chan int
 	Done() chan int
 }
@@ -18,14 +18,14 @@ type Device interface {
 type extendedBoard interface {
 	Board
 	Log()
-	Mount(int, Device) error
+	Mount(byte, Device) error
 }
 
 type board struct {
 	firmata *firmata.FirmataClient
 	ready chan int
 	done chan int
-	devices map[int]Device
+	devices map[byte]Device
 }
 
 func NewBoard() (created_board Board, reterr error) {
@@ -33,7 +33,7 @@ func NewBoard() (created_board Board, reterr error) {
 	retval := new(board)
 	retval.ready = make(chan int, 1)
 	retval.done = make(chan int, 1)
-	retval.devices = make(map[int]Device)
+	retval.devices = make(map[byte]Device)
 
 	created_board = retval
 
@@ -64,7 +64,7 @@ func (this *board) Close() {
 	// Close the serial port
 }
 
-func (this *board) Mount(pin int, device Device) error {
+func (this *board) Mount(pin byte, device Device) error {
 	if _, ok := this.devices[pin]; !ok {
 		return errors.New("Pin already allocated")
 	}
@@ -74,8 +74,8 @@ func (this *board) Mount(pin int, device Device) error {
 	return nil
 }
 
-func (this *board) Led(pin int) Led {
-	retval := &led{pin, this}
+func (this *board) Led(pin byte) Led {
+	retval := &led{pin: pin, board: this, firmata: this.firmata}
 	retval.init()
 
 	return retval

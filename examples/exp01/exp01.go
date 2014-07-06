@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
-import "github.com/russtheaerialist/five"
+import (
+    "fmt"
+    "time"
+    "github.com/russtheaerialist/five"
+)
 
 func main() {
     board, err := five.NewBoard()
@@ -15,7 +18,13 @@ func main() {
 
     led := board.Led(13)
 
-    led.Strobe()
+    led.Strobe(0)
+
+    fmt.Println("Waiting for 30 seconds")
+    time.Sleep(time.Second * 30)  // Wait for one minute and then call stop
+    fmt.Println("Stopping Strobe")
+
+    led.Stop()
 
     <- board.Done() // Wait until we are "done"
 
