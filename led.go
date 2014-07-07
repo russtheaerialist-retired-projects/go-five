@@ -26,11 +26,13 @@ type led struct {
 
 	pinMode firmata.PinMode
 	value bool
-	stop chan bool
+	stop chan int
+	ticker *time.Ticker
 }
 
 func (this *led) init() {
 	this.board.Mount(this.pin, this)
+	this.stop = make(chan int)
 	this.firmata.SetPinMode(this.pin, firmata.Output)
 	this.Off()
 }
@@ -50,7 +52,11 @@ func (this *led) On() {
 }
 
 func (this *led) Stop() {
-	this.stop <- true
+	if this.ticker != nil {
+		this.ticker.Stop()
+		this.ticker = nil
+		this.stop <- 1
+	}
 }
 
 func (this *led) Toggle() {
@@ -62,24 +68,27 @@ func (this *led) Toggle() {
 }
 
 func (this *led) Strobe(rate time.Duration) {
+	if this.ticker != nil {
+		return
+	}
+
 	if rate <= 0 {
 		rate = 100 * time.Millisecond
 	} else {
 		rate = rate * time.Millisecond
 	}
 
-	go func(rate time.Duration) {
+	this.ticker = time.NewTicker(rate)
+
+	go func() {
 		fmt.Printf("strobing on pin %d\n", this.pin)
 		for {
 			select {
-			case _ = <- this.stop:
-				fmt.Println("received stop, ending strobe")
+			case <- this.stop:
 				return
-			default:
+			case <- this.ticker.C:
 				this.Toggle()
-				time.Sleep(rate)
 			}
-
 		}
-	}(rate)
+	}()
 }
