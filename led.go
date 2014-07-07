@@ -12,9 +12,11 @@ type Led interface {
 
 	On()
 	Off()
+	Toggle()
+	Brightness(int)
 
 	Strobe(time.Duration)
-	Toggle()
+
 
 	Stop()
 }
@@ -25,7 +27,7 @@ type led struct {
 	firmata *firmata.FirmataClient
 
 	pinMode firmata.PinMode
-	value bool
+	value int
 	stop chan int
 	ticker *time.Ticker
 }
@@ -33,22 +35,37 @@ type led struct {
 func (this *led) init() {
 	this.board.Mount(this.pin, this)
 	this.stop = make(chan int)
-	this.firmata.SetPinMode(this.pin, firmata.Output)
 	this.Off()
 }
 
 func (this *led) IsOn() bool {
-	return this.value
+	return this.value != 0
+}
+
+func (this *led) setPinMode(pinMode firmata.PinMode) {
+	if pinMode != this.pinMode {
+		this.firmata.SetPinMode(this.pin, pinMode)
+		this.pinMode = pinMode
+	}
 }
 
 func (this *led) Off() {
+	this.setPinMode(firmata.Ouput)
 	this.firmata.DigitalWrite(uint(this.pin), false)
 	this.value = false
 }
 
 func (this *led) On() {
+	this.setPinMode(firmata.Output)
 	this.firmata.DigitalWrite(uint(this.pin), true)
 	this.value = true
+}
+
+func (this *led) Brightness(level int) {
+	this.setPinMode(firmata.PWM)
+
+	this.firmata.analogWrite(this.pin, level)
+	this.value = level
 }
 
 func (this *led) Stop() {

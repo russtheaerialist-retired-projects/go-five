@@ -21,6 +21,7 @@ func main() {
     led.Strobe(0)
 
     fmt.Println("Waiting for 30 seconds")
+
     time.Sleep(time.Second * 30)  // Wait for one minute and then call stop
     fmt.Println("Stopping Strobe")
 
