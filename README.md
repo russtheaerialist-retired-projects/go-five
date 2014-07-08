@@ -22,3 +22,4 @@ Current Goal:
 -------------
 
 * Servo Port
+* Error Handling Improvements
