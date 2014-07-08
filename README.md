@@ -16,10 +16,11 @@ Current Project Status:
 
 * Serial Port Detection complete
 * Firmata Initialization complete
-* Led complete
+* Led ~~complete~~ not complete, based off of old code, need to add some functionality and refactor a little
 
 Current Goal:
 -------------
 
+* Refactor LED functionality to support animate, some callbacks, and generally getting up to the latest commit
 * Servo Port
 * Error Handling Improvements
