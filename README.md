@@ -14,4 +14,11 @@ I took this on because:
 Current Project Status:
 -----------------------
 
-Initial Implementation, nothing working yet
+* Serial Port Detection complete
+* Firmata Initialization complete
+* Led complete
+
+Current Goal:
+-------------
+
+* Servo Port
