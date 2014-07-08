@@ -18,6 +18,8 @@ type Led interface {
 	Strobe(time.Duration)
 	Pulse(time.Duration)
 	Fade(byte, time.Duration)
+	FadeIn(time.Duration)
+	FadeOut(time.Duration)
 
 	Stop()
 }
@@ -204,4 +206,20 @@ func (this *led) Fade(val byte, rate time.Duration) {
 			}
 		}
 	}()
+}
+
+func (this *led) FadeIn(rate time.Duration) {
+	if rate <= 0 {
+		rate = time.Second
+	}
+
+	this.Fade(255, rate)
+}
+
+func (this *led) FadeOut(rate time.Duration) {
+	if rate <= 0 {
+		rate = time.Second
+	}
+
+	this.Fade(0, rate)
 }
