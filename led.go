@@ -13,11 +13,11 @@ type Led interface {
 	On()
 	Off()
 	Toggle()
-	Brightness(int)
+	Brightness(byte)
 
 	Strobe(time.Duration)
 	Pulse(time.Duration)
-	Fade(int, time.Duration)
+	Fade(byte, time.Duration)
 
 	Stop()
 }
@@ -28,7 +28,7 @@ type led struct {
 	firmata *firmata.FirmataClient
 
 	pinMode firmata.PinMode
-	value int
+	value byte
 	stop chan int
 	ticker *time.Ticker
 }
@@ -51,22 +51,38 @@ func (this *led) setPinMode(pinMode firmata.PinMode) {
 }
 
 func (this *led) Off() {
-	this.setPinMode(firmata.Ouput)
+	this.setPinMode(firmata.Output)
 	this.firmata.DigitalWrite(uint(this.pin), false)
-	this.value = false
+	this.value = 0
 }
 
 func (this *led) On() {
 	this.setPinMode(firmata.Output)
 	this.firmata.DigitalWrite(uint(this.pin), true)
-	this.value = true
+	this.value = 255
 }
 
-func (this *led) Brightness(level int) {
+func (this *led) Brightness(level byte) {
 	this.setPinMode(firmata.PWM)
 
-	this.firmata.analogWrite(this.pin, level)
+	this.firmata.AnalogWrite(uint(this.pin), level)
 	this.value = level
+}
+
+func (this *led) incBrightness() {
+	this.Brightness(this.value + 1)
+}
+
+func (this *led) decBrightness() {
+	this.Brightness(this.value - 1)
+}
+
+func (this *led) adjustBrightness(direction bool) {
+	if direction {
+		this.incBrightness()
+	} else {
+		this.decBrightness()
+	}
 }
 
 func (this *led) Stop() {
@@ -104,6 +120,7 @@ func (this *led) Strobe(rate time.Duration) {
 			select {
 			case <- this.stop:
 				return
+
 			case <- this.ticker.C:
 				this.Toggle()
 			}
@@ -123,7 +140,7 @@ func (this *led) Pulse(rate time.Duration) {
 	}
 
 	to := rate / 255 * 2
-	direction := 1
+	direction := true
 
 	this.ticker = time.NewTicker(to)
 
@@ -135,57 +152,56 @@ func (this *led) Pulse(rate time.Duration) {
 
 			case <- this.ticker.C:
 				if this.value == 0 {
-					direction = 1
+					direction = true
 				}
 
 				if this.value == 255 {
-					direction = -1
+					direction = false
 				}
 
-				this.brightness(this.value + direction)
+				this.adjustBrightness(direction)
 			}
 		}
-	}
+	}()
 }
 
-func (this *led) Fade(value int, rate time.Duration) {
+func (this *led) Fade(val byte, rate time.Duration) {
 	if this.ticker != nil {
 		return
 	}
 
 	this.setPinMode(firmata.PWM)
+
+    if rate <= 0 {
+    	rate = time.Second
+    }
+
+    if val < 0 {
+    	val = 255
+    }
+
+	var direction bool
+	if this.value <= val {
+		direction = true
+	} else {
+		direction = false
+	}
+
+	this.ticker = time.NewTicker(rate)
+	go func() {
+		for {
+			if (direction && this.value == 255) || (!direction && this.value == 0) || (this.value == val) {
+				this.Stop()
+			}
+
+			select {
+
+				case <- this.stop:
+					return
+
+				case <- this.ticker.C:
+					this.adjustBrightness(direction)
+			}
+		}
+	}()
 }
-
-// Led.prototype.fade = function( val, time ) {
-//   // Avoid traffic jams
-//   if ( this.isRunning ) {
-//     return;
-//   }
-
-//   // Reset pinMode to PWM
-//   this.pinMode = this.firmata.MODES.PWM;
-
-//   var to = ( time || 1000 ) / ( (val || 255) * 2 ),
-//       direction = this.value <= val ? 1 : -1;
-
-//   priv.set( this, {
-//     isOn: true,
-//     isRunning: true,
-//     value: this.value
-//   });
-
-//   this.interval = setInterval(function() {
-//     var valueAt = this.value;
-
-//     if ( (direction > 0 && valueAt === 255) ||
-//           (direction < 0 && valueAt === 0) ||
-//             valueAt === val ) {
-
-//       this.stop();
-//     } else {
-//       this.brightness( valueAt + direction );
-//     }
-//   }.bind(this), to);
-
-//   return this;
-// };
