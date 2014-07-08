@@ -16,14 +16,13 @@ func main() {
     <- board.Ready() // Wait for the ready signal
     fmt.Println("Board Ready")
 
-    led := board.Led(13)
+    led := board.Led(9) // PWM capable pin
 
-    led.Strobe(0)
+    led.Pulse(0)
 
     fmt.Println("Waiting for 30 seconds")
 
     time.Sleep(time.Second * 30)  // Wait for one minute and then call stop
-    fmt.Println("Stopping Strobe")
 
     led.Stop()
 
